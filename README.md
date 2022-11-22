@@ -1,3 +1,3 @@
 # vignette Group 2
 
-Time series outlier and anomaly detection for time series economic data from LA concerning unployment
+Time series anomaly detection and change-point on the univariate (potentially multivariate case) for time series economic data from LA concerning unployment
