@@ -1,0 +1,86 @@
+---
+title: "Vignette Writeup"
+author: "Edward Ho, "
+date: last-modified
+published-title: "Updated"
+editor: visual
+format: html
+code-copy: true
+execute:
+  message: false
+  warning: false
+  echo: false
+  cache: true
+---
+
+```{r}
+# load any other packages and read data here
+library(tidyverse)
+library(ggplot2)
+library(gridExtra)
+library(knitr)
+```
+
+# Executive summary
+
+Time series anomaly detection and change-point on the univariate (potentially multivariate case) for time series economic data from LA concerning unemployment.
+
+## Task Question 1:
+
+[TEXT HERE]
+
+## Task Question 2:
+
+The primary interest in task 2 was to find significant periods of changes, whereas task 1 focused on anomaly detection of certain points, our interest lies in finding significant increments of time where there may have been upwards or downwards shifts in unemployment rates.
+
+# Data description
+
+```{r}
+unemployment <- read_csv('data/processed_data.csv')
+unemployment
+```
+
+Above we can see that the data collected is essentially a wrap-up on the 1st of a given month from the years 1900 to 2021 recorded from the city of Los Angeles. These variables encapsulate various city markers that range from unemployment to government benefits. 
+Notably, belows are some interesting variables of interest:
+
+- The date (Year-Month-Day) of each observation/recording
+
+- The unemployment rate
+
+- Average price of electricity
+
+- Average price of gasoline 
+
+Since we are only concerned with the time-series aspect of unemployment, we are only focusing on the date and the unemployment rate of each month, therefore we will not show much interest in the other variables, yet.
+
+# Findings
+
+[Finding's and Methodology for Task 1 and 2 below]
+
+## Task 1
+
+[things of interest]
+
+### Methodology for Task 1
+
+[how it's found]
+
+### Results
+
+[finding's]
+
+## Task 2
+
+[things of interest]
+
+### Methodology for Task 2
+
+[how it's found]
+
+### Results
+
+[finding's]
+
+# Conclusion
+
+[wrapping up project, final remark's about project/data/results]
