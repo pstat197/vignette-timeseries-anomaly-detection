@@ -3,17 +3,16 @@
 library(tidyverse)
 library(tidymodels)
 library(lubridate) #dealing with dates, and time series aspect 
+library(zoo) #dates
 library(Rbeast) #used for change-point detection
 library(changepoint) #used for change-point detection
 library(changepoint.np) #used for change-point nonparemetric
 processed_data <- read_csv('data/processed_data.csv')
-processed_data$DATE <- zoo::as.Date(processed_data$DATE, tz = NULL, format = NULL) # change date from characters to date element
-data <- data.frame(processed_data$DATE,processed_data$unemploy_rate_la) %>%
-  rename("unemploy_rate_la" = "processed_data.unemploy_rate_la", "date" = "processed_data.DATE")
-data.ts <- ts(data$unemploy_rate_la, frequency = 10, start = c(1990,1), end = c(2021,2))
-ts.plot(data.ts)
-plot(processed_data$unemploy_rate_la)
-
+processed_data$DATE <- as.Date(processed_data$DATE, "%Y/%m/%d") # change date from characters to date element
+data <- tibble(processed_data$DATE,processed_data$unemploy_rate_la) %>%
+  rename("unemploy_rate_la" = "processed_data$unemploy_rate_la", "date" = "processed_data$DATE")
+value.ts = ts(data$unemploy_rate_la,start = c(1990,1),end = c(2022,1), frequency = 12) 
+plot(value.ts)
 
 ## Using Rbeast
 y <- data$unemploy_rate_la
@@ -33,13 +32,12 @@ print(out)
 
 
 ## Using changepoint 
-m1 <- c(data$unemploy_rate_la)
-m1.amoc = cpt.mean(m1, penalty = "MBIC")
+m1.amoc = cpt.mean(value.ts, penalty = "MBIC")
 cpts(m1.amoc) # checks for at most one change-point value
 plot(m1.amoc)
 
 # we can see that we definitely need way more change points that just one
-LA.default = cpt.mean(data$unemploy_rate_la)
+LA.default = cpt.mean(value.ts)
 cpts(LA.default)
 param.est(LA.default)
 
@@ -49,24 +47,25 @@ cpts(LA.scale)
 
 # since we still get the same changepoint after scaling the variance, that shows that this is actually a changepoint
 # and not just because we forced it to show a change point
-m2 <- c(data$unemploy_rate_la)
-m2.man = cpt.var(m2,method = "PELT")
+m2.man = cpt.var(value.ts,method = "PELT")
 cpts(m2.man) 
 param.est(m2.man)
 plot(m2.man)
 
-
 ## using mean
-m3 <- c(data$unemploy_rate_la)
-m3.man = cpt.mean(m3,method = "PELT")
+m3.man = cpt.mean(value.ts,method = "PELT")
 cpts(m3.man) 
-cpts(m3.man)
 param.est(m3.man)
 plot(m3.man)
 
 ## finding changepoint with respect to variance and mean
-mv1 <- c(data$unemploy_rate_la)
-mv1.pelt <- cpt.meanvar(mv1, method = "PELT")
+mv1.pelt <- cpt.meanvar(value.ts, method = "PELT")
+mv2.pelt <- cpt.meanvar(value.ts, method = "BinSeg")
 length(cpts(mv1.pelt))
-param.est(mv1.pelt)
-plot(mv1.pelt)
+length(cpts(mv2.pelt))
+param.est(mv2.pelt)
+plot(mv2.pelt)
+# notice that PELT produces way too many points so overall it's not that useful to our analysis, therefore
+# we should change our method, thus I opted for BinSeg. And we already can see that it produces much more useful 
+# data than PELT does since it shows meaning points of interest.
+
