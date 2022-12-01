@@ -19,3 +19,9 @@ Analytical tasks for this assignment fall under two categories:
 -   Anomaly detection on the unemployment rate to find any notable signs over the course of the data.
 
 -   Change-point detection on the unemployment rate to find span of years where there was notable changes in unemployment rate
+
+### Change Point Analysis
+
+#### What is a changepoint?
+
+Suppose we have a time series $Y$.
