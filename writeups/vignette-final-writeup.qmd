@@ -297,9 +297,23 @@ p4
 
 ### What is Change-point Detection
 
+Time series data is a widely important data type that we have been learning more as of late. This data is described as sequences of measurements over time describing the behavior of systems. Often, we'll see time series data in medicine, aerospace, finance, etc. The behaviors of the systems can change due to an aspect of time, therefore time series must be account for time in a way linear systems do not. Change point detection is a methodology to analyze data which detects abrupt changes in data when a property of the time series changes. A common example in stocks might be when do we see an abrupt change in the average prices of a certain stock over the period of a time, i.e., for one month cryptocurrency might sit at 70 dollars but then suddenly the next month it drops down to 4 and so we'd say the change-point was the period that seperates the two months.
 
+Changes are spotted through three primary detectors:
+
+- mean
+
+- variance
+
+- mean-variance
+
+Change-point will detect changes from one sequence to another sequence usually based on one of these 3 detectors to see if there's a "change."
 
 ### Examples on Time Series LA Data
+
+Let's use data and examples to give some actual intuition about how change point works regarding time series data. I would like to note, similar to above, we will be performing this only on the univariate case, as moving to the multivariate cases increasing the difficulty by a bit. As once you consider a multivariate case, no longer can you only consider changes in time, but you must also account for covariate correlation between variables along with changes in time.
+
+Plotting the data below you can already see some very obvious points where there are "changes" in unemployment.
 
 ```{r}
 processed_data$DATE <- as.Date(processed_data$DATE, "%Y/%m/%d") # change date from characters to date element
@@ -309,75 +323,91 @@ value.ts = ts(data$unemploy_rate_la,start = c(1990,1),end = c(2022,1), frequency
 plot(value.ts)
 ```
 
-```{r}
-## Using Rbeast
+Some very obvious changes offcur at ~2008 and ~2020, so we should expect a change point to occur here.
+
+### Packages
+
+Some notable packages used for change-point is: 
+-Rbeast 
+-changepoint 
+
+These two packages are what we'll be using for the data.
+
+Primarily, changepoint will be the more useful package since it allows more flexibility in how the parameters are set. But Rbeast is a nice package to use for seeing quick preliminaries on the data.
+
+### Using RBeast
+
+```{r setup, include=FALSE}
 y <- data$unemploy_rate_la
-out=beast(y, season='none')
-plot(out)
+out = beast(y, season='none')
+```
+
+```{r}
 print(out)
-
-# cpt.mean - mean only changes
-# cpt.var - variance only changes
-# cpt.meanvar - mean and variance changes
+plot(out)
 ```
 
-```{r}
-# How do we know if a change-point found is significant or not?
-# We calculate cost of the whole data with no change
-# If the difference is large enough then we say there is no change
-# default change-point metric in changepoint package to test if there is a change point or 
-# not is MBIC - a Modified Bayesian Information Criterion 
 
-## Using changepoint 
+To read this graph, the dotted lines mean that there are indications of a change-point. In this graph, it detects around 10, and we can tell that there are change points where our initially intuition had expected it to be. What's neat about the package is that it tells us the probability that it expects a changepoint there, so at the x-axis of time of 363 and 138, about 2020 and 2008 respectively, it detects around a 99% chance that there is a valid change point there account for mean and variance together.
+
+### Using changepoint
+
+How do we know if a change-point found is significant or not? We calculate cost of the whole data with no change, if the difference is large enough then we say there is no change, otherwise if we see a appropriate difference in two intervals in mean, variance, or both, then we say there's a change. In changepoint package, the default change-point metric to test if there is a change point or not is MBIC - a Modified Bayesian Information Criterion. There are various other's but MBIC is a linear penalty to find if there is a singular, at most one changepoint, in terms of time series data this isn't usually the case but let's try it out.
+
+```{r}
 m1.amoc = cpt.mean(value.ts, penalty = "MBIC")
-#cpts(m1.amoc) # checks for at most one change-point value
 plot(m1.amoc)
-
-# we can see that we definitely need way more change points that just one
-#LA.default = cpt.mean(value.ts)
-#cpts(LA.default)
-#param.est(LA.default)
-
-# it can be seen that the variance might not be equal to 1, so we must appropriately scale it  
-#LA.scale = cpt.mean(as.vector(scale(data$unemploy_rate_la)))
-#cpts(LA.scale)
 ```
 
+Notice that we definitely need more than one point to express change points. But before we proceed, when using changepoint mean, we assume that the data values follow a normal distribution with all steps from points to points having the same standard deviation, usually 1. Therefore, let's scale appropriately and see if our data may break assumptions.
+
 ```{r}
-# since we still get the same changepoint after scaling the variance, that shows that this is actually a changepoint
-# and not just because we forced it to show a change point
+LA.scale = cpt.mean(as.vector(scale(data$unemploy_rate_la)))
+plot(LA.scale)
+```
+
+The change-point doesn't change so therefore it's fairly safe to assume that our data is fairly normalized and since we still get the same changepoint after scaling the variance, that shows that this is actually a changepoint.
+
+```{r}
 m2.man = cpt.var(value.ts,method = "PELT")
-cpts(m2.man) 
-param.est(m2.man)
 plot(m2.man)
 ```
+
+There are two primary methods that we cover:
+
+- PELT (Pruned Exact Linear Time)
+
+
+- BinSeg (Binary Segmentation)
+
+Typically, while asymptotically PELT is quicker in performance speed, Binary Segmentation has shown to be a bit faster in terms of application. Although, PELT typically leads to substantially more accurate segmentations than Binary Segmentation
+
+Above we see the use of PELT only with respect to variance, and we can already see some inaccuracies with an inability to track all the notable changes. This might be a sign that we should also check for mean.
 
 ```{r}
 ## using mean
 m3.man = cpt.mean(value.ts,method = "PELT")
-cpts(m3.man) 
-param.est(m3.man)
 plot(m3.man)
 ```
+
+Already, we can already see improvement using mean and that it's starting to match our results from the Rbeast preliminary runs. Using mean and PELT gives 13 change point positions, but to not draw any conclusions, lets try using mean and variance and perhaps a different penalty method to see if we can get something "better."
 
 ```{r}
 ## finding changepoint with respect to variance and mean
 mv1.pelt <- cpt.meanvar(value.ts, method = "PELT")
-length(cpts(mv1.pelt))
 plot(mv1.pelt)
 # notice that PELT produces way too many points so overall it's not that useful to our analysis, therefore
 # we should change our method, thus I opted for BinSeg. And we already can see that it produces much more useful 
 # data than PELT does since it shows meaning points of interest.
 ```
 
-```{r}
-mv2.pelt <- cpt.meanvar(value.ts, method = "BinSeg")
-length(cpts(mv2.pelt))
-param.est(mv2.pelt)
+From an initial view, we can already see that meanvar and PELT produces far too many change-points and that it doesn't really produce anything of value. Therefore, let's opt to use Binary Segmentation and mean, instead, which we might expect to get better points.
+
+```{r, warning=FALSE}
+mv2.pelt <- cpt.mean(value.ts, method = "BinSeg")
 plot(mv2.pelt)
 ```
 
+Although we see far less change-points, we can already see the most valuable point's that would be telling of significant unemployment rates changes. Such as the recession in 2008 and COVID in 2020.
 
-# Conclusion
-
-\[wrapping up project, final remark's about project/data/results\]
+Although the testing is ambiguous and it's difficult to see what really is "good" change point detection, this is how we went about our methods and intuition.

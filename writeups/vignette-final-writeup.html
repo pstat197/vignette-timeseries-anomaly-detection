@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.1.189">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Name">
+<meta name="dcterms.date" content="2022-12-05">
+
+<title>Vignette Writeup</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1.6em;
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="vignette-final-writeup_files/libs/clipboard/clipboard.min.js"></script>
+<script src="vignette-final-writeup_files/libs/quarto-html/quarto.js"></script>
+<script src="vignette-final-writeup_files/libs/quarto-html/popper.min.js"></script>
+<script src="vignette-final-writeup_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="vignette-final-writeup_files/libs/quarto-html/anchor.min.js"></script>
+<link href="vignette-final-writeup_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="vignette-final-writeup_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="vignette-final-writeup_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="vignette-final-writeup_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="vignette-final-writeup_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Vignette Writeup</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Name </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Updated</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">December 5, 2022</p>
+    </div>
+  </div>
+    
+  </div>
+  
+
+</header>
+
+<div class="cell" data-hash="vignette-final-writeup_cache/html/unnamed-chunk-1_bdf0879ee50b6957274b67798c1796c6">
+
+</div>
+<section id="executive-summary" class="level1">
+<h1>Executive summary</h1>
+<p>Time series anomaly detection and change-point on the univariate (potentially multivariate case) for time series economic data from LA concerning unemployment.</p>
+</section>
+<section id="data-description" class="level1">
+<h1>Data description</h1>
+<div class="cell" data-hash="vignette-final-writeup_cache/html/unnamed-chunk-2_2551db8fd643d0a74e048ee04b62600f">
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 385 × 23
+   DATE  unemp…¹ avg_p…² avg_p…³ civil…⁴ unemp…⁵ new_p…⁶ home_…⁷ allem…⁸ allem…⁹
+   &lt;chr&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;
+ 1 1990…     5.6   0.108   0.988     0.2    -4.3   4649.     0.4     0.1    -1.2
+ 2 1990…     5.4   0.108   1.01      0.1    -3.8   3628.     0.2    -0.1    -1.1
+ 3 1990…     5.5   0.108   1.03     -0.4     1     3833.    -0.1    -0.2    -3.7
+ 4 1990…     5.4   0.107   1.08      0.4    -0.9   3466.    -1.1    -0.2    -1.3
+ 5 1990…     5.4   0.108   1.10      0      -0.5   3497.    -0.3    -0.3    -0.9
+ 6 1990…     6.2   0.108   1.13      0.5    15.2   2796.    -0.9    -0.4    -1.2
+ 7 1990…     6.2   0.108   1.28     -0.4     0.2   2466.    -0.6    -0.4    -1.8
+ 8 1990…     6.3   0.108   1.35     -1.4     0.4   2357.    -0.9    -0.4    -0.4
+ 9 1990…     6.2   0.109   1.42     -0.1    -2.3   2173.    -0.6    -0.1    -1.5
+10 1990…     6.5   0.11    1.42     -0.5     3.7   2267.    -1.2    -0.2    -1.2
+# … with 375 more rows, 13 more variables: allemployee_manu_la_pch &lt;dbl&gt;,
+#   allemployee_finan_la_pch &lt;dbl&gt;, allemployee_leisure_la_pch &lt;dbl&gt;,
+#   govn_social_insu_pch &lt;dbl&gt;, compen_employee_wage_pch &lt;dbl&gt;,
+#   real_disp_inc_per_capital_pch &lt;dbl&gt;, bbk_real_gdp &lt;dbl&gt;,
+#   pers_consum_expen_pch &lt;dbl&gt;, pers_saving_rate_us &lt;dbl&gt;,
+#   pers_current_tax_chg &lt;dbl&gt;, govn_social_ben_toperson_pch &lt;dbl&gt;,
+#   federal_fund_eff_rate_us &lt;dbl&gt;, X30_year_fixed_mortgage_us &lt;dbl&gt;, and …</code></pre>
+</div>
+</div>
+<p>Above we can see that the data collected is essentially a wrap-up on the 1st of a given month from the years 1900 to 2021 recorded from the city of Los Angeles. These variables encapsulate various city markers that range from unemployment to government benefits. Notably, belows are some interesting variables of interest:</p>
+<ul>
+<li><p>The date (Year-Month-Day) of each observation/recording</p></li>
+<li><p>The unemployment rate</p></li>
+<li><p>Average price of electricity</p></li>
+<li><p>Average price of gasoline</p></li>
+</ul>
+<p>Since we are only concerned with the time-series aspect of unemployment, we are only focusing on the date and the unemployment rate of each month, therefore we will not show much interest in the other variables, yet.</p>
+</section>
+<section id="anomaly-detection" class="level1">
+<h1>Anomaly Detection</h1>
+<p>In this vignette, you’ll learn how to conduct anomaly detection for a single time-series data.</p>
+<section id="what-is-anomaly-detection" class="level3">
+<h3 class="anchored" data-anchor-id="what-is-anomaly-detection">What is Anomaly Detection?</h3>
+<p>A time series is the sequential set of values tracked over a time duration. An anomaly is something that happens that was unexpected or was caused by an abnormal event. (more contents to go….)</p>
+</section>
+<section id="set-up" class="level3">
+<h3 class="anchored" data-anchor-id="set-up">Set up</h3>
+<p>We are going to work with “anomalize” and “timetk” packages in R.</p>
+<div class="cell" data-hash="vignette-final-writeup_cache/html/unnamed-chunk-3_d4ecf31ee26e87489ca203eaddd5c047">
+<div class="cell-output cell-output-stdout">
+<pre><code>      DATE unemploy_rate_la avg_price_electr_kwh_La avg_price_gasolone_la
+1 1990/2/1              5.6                   0.108                 0.988
+2 1990/3/1              5.4                   0.108                 1.014
+3 1990/4/1              5.5                   0.108                 1.030
+4 1990/5/1              5.4                   0.107                 1.080
+5 1990/6/1              5.4                   0.108                 1.103
+  civilian_labor_force_la_pch unemployed_num_pch
+1                         0.2               -4.3
+2                         0.1               -3.8
+3                        -0.4                1.0
+4                         0.4               -0.9
+5                         0.0               -0.5
+  new_private_housing_structure_issue_la home_price_index_la
+1                               4648.972                 0.4
+2                               3628.443                 0.2
+3                               3833.476                -0.1
+4                               3466.321                -1.1
+5                               3496.684                -0.3
+  allemployee_nonfarm_la_pch allemployee_constr_la_pch allemployee_manu_la_pch
+1                        0.1                      -1.2                     0.0
+2                       -0.1                      -1.1                    -0.4
+3                       -0.2                      -3.7                    -0.4
+4                       -0.2                      -1.3                    -0.4
+5                       -0.3                      -0.9                    -0.7
+  allemployee_finan_la_pch allemployee_leisure_la_pch govn_social_insu_pch
+1                     -0.1                       -0.4                  0.0
+2                     -0.7                       -0.1                  1.0
+3                     -0.2                       -0.6                  0.0
+4                     -0.8                       -0.1                  0.3
+5                     -0.3                        0.3                  1.3
+  compen_employee_wage_pch real_disp_inc_per_capital_pch bbk_real_gdp
+1                      1.2                           0.1    6.1814509
+2                      0.7                          -0.1    2.9195562
+3                      0.9                           0.5   -0.5634379
+4                     -0.3                          -0.2    0.7507924
+5                      0.8                           0.0    1.1771073
+  pers_consum_expen_pch pers_saving_rate_us pers_current_tax_chg
+1                  -0.1                 8.6                  8.1
+2                   0.7                 8.3                  5.2
+3                   0.4                 8.8                  4.2
+4                   0.2                 8.7                  0.6
+5                   0.8                 8.6                  3.9
+  govn_social_ben_toperson_pch federal_fund_eff_rate_us
+1                         -0.2                 8.237143
+2                          0.7                 8.276774
+3                          0.6                 8.255000
+4                         -0.5                 8.176452
+5                          1.2                 8.288667
+  X30_year_fixed_mortgage_us
+1                    3.05710
+2                    0.69135
+3                    0.99338
+4                    1.03664
+5                   -2.99213</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>'data.frame':   385 obs. of  23 variables:
+ $ DATE                                  : chr  "1990/2/1" "1990/3/1" "1990/4/1" "1990/5/1" ...
+ $ unemploy_rate_la                      : num  5.6 5.4 5.5 5.4 5.4 6.2 6.2 6.3 6.2 6.5 ...
+ $ avg_price_electr_kwh_La               : num  0.108 0.108 0.108 0.107 0.108 0.108 0.108 0.108 0.109 0.11 ...
+ $ avg_price_gasolone_la                 : num  0.988 1.014 1.03 1.08 1.103 ...
+ $ civilian_labor_force_la_pch           : num  0.2 0.1 -0.4 0.4 0 0.5 -0.4 -1.4 -0.1 -0.5 ...
+ $ unemployed_num_pch                    : num  -4.3 -3.8 1 -0.9 -0.5 15.2 0.2 0.4 -2.3 3.7 ...
+ $ new_private_housing_structure_issue_la: num  4649 3628 3833 3466 3497 ...
+ $ home_price_index_la                   : num  0.4 0.2 -0.1 -1.1 -0.3 -0.9 -0.6 -0.9 -0.6 -1.2 ...
+ $ allemployee_nonfarm_la_pch            : num  0.1 -0.1 -0.2 -0.2 -0.3 -0.4 -0.4 -0.4 -0.1 -0.2 ...
+ $ allemployee_constr_la_pch             : num  -1.2 -1.1 -3.7 -1.3 -0.9 -1.2 -1.8 -0.4 -1.5 -1.2 ...
+ $ allemployee_manu_la_pch               : num  0 -0.4 -0.4 -0.4 -0.7 0.1 -0.9 -0.8 -0.4 -0.5 ...
+ $ allemployee_finan_la_pch              : num  -0.1 -0.7 -0.2 -0.8 -0.3 0.7 0.1 0.2 -0.3 -0.5 ...
+ $ allemployee_leisure_la_pch            : num  -0.4 -0.1 -0.6 -0.1 0.3 0.5 -0.3 0 0.1 0.2 ...
+ $ govn_social_insu_pch                  : num  0 1 0 0.3 1.3 0.7 -0.1 0.8 -0.3 0.3 ...
+ $ compen_employee_wage_pch              : num  1.2 0.7 0.9 -0.3 0.8 0.7 -0.4 0.7 -0.8 0 ...
+ $ real_disp_inc_per_capital_pch         : num  0.1 -0.1 0.5 -0.2 0 0.2 -0.8 -0.2 -0.9 -0.1 ...
+ $ bbk_real_gdp                          : num  6.181 2.92 -0.563 0.751 1.177 ...
+ $ pers_consum_expen_pch                 : num  -0.1 0.7 0.4 0.2 0.8 0.5 0.7 0.6 0 0 ...
+ $ pers_saving_rate_us                   : num  8.6 8.3 8.8 8.7 8.6 8.7 8.1 8.1 7.8 7.9 ...
+ $ pers_current_tax_chg                  : num  8.1 5.2 4.2 0.6 3.9 2.4 -0.3 3.3 -1.8 -0.5 ...
+ $ govn_social_ben_toperson_pch          : num  -0.2 0.7 0.6 -0.5 1.2 -0.7 -0.3 2 -1 0.4 ...
+ $ federal_fund_eff_rate_us              : num  8.24 8.28 8.26 8.18 8.29 ...
+ $ X30_year_fixed_mortgage_us            : num  3.057 0.691 0.993 1.037 -2.992 ...</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>tibble [385 × 2] (S3: tbl_df/tbl/data.frame)
+ $ DATE            : Date[1:385], format: "1990-02-01" "1990-03-01" ...
+ $ unemploy_rate_la: num [1:385] 5.6 5.4 5.5 5.4 5.4 6.2 6.2 6.3 6.2 6.5 ...</code></pre>
+</div>
+</div>
+</section>
+<section id="uni-variate-time-series-anomaly-detection" class="level3">
+<h3 class="anchored" data-anchor-id="uni-variate-time-series-anomaly-detection">Uni-variate Time Series Anomaly Detection</h3>
+<p>The entire process of Anomaly detection for a time-series take place across 3 steps:</p>
+<ol type="1">
+<li>Decompose the time-series into the underlying variables: <em>trend, seasonality, remainder</em></li>
+<li>Create upper and lower thresholds based on certain algorithms</li>
+<li>Identify the data points which are outside the thresholds as anomalies</li>
+</ol>
+<div class="cell" data-hash="vignette-final-writeup_cache/html/unnamed-chunk-4_f1bcbd5cedac7c3923214ff946900c24">
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 385
+Columns: 11
+Index: DATE
+$ DATE             &lt;date&gt; 1990-02-01, 1990-03-01, 1990-04-01, 1990-05-01, 1990…
+$ unemploy_rate_la &lt;dbl&gt; 5.6, 5.4, 5.5, 5.4, 5.4, 6.2, 6.2, 6.3, 6.2, 6.5, 6.5…
+$ observed         &lt;dbl&gt; 5.6, 5.4, 5.5, 5.4, 5.4, 6.2, 6.2, 6.3, 6.2, 6.5, 6.5…
+$ season           &lt;dbl&gt; 0.01079240, -0.10196977, -0.37829521, -0.32774673, 0.…
+$ trend            &lt;dbl&gt; 5.769614, 5.895768, 6.021921, 6.148075, 6.274228, 6.4…
+$ remainder        &lt;dbl&gt; -0.18040676, -0.39379797, -0.14362593, -0.42032780, -…
+$ remainder_l1     &lt;dbl&gt; -2.314905, -2.314905, -2.314905, -2.314905, -2.314905…
+$ remainder_l2     &lt;dbl&gt; 2.471808, 2.471808, 2.471808, 2.471808, 2.471808, 2.4…
+$ anomaly          &lt;chr&gt; "No", "No", "No", "No", "No", "No", "No", "No", "No",…
+$ recomposed_l1    &lt;dbl&gt; 3.465501, 3.478893, 3.328720, 3.505422, 4.058509, 4.6…
+$ recomposed_l2    &lt;dbl&gt; 8.252215, 8.265606, 8.115434, 8.292136, 8.845223, 9.4…</code></pre>
+</div>
+</div>
+<p>In the output tibble, there is a character column labeling if a time value is an anomalies or not. we can guess that anomalies are determined by “remainder” and the interval formed by “remainder_l1” and “remainder_l2”. Then, we can visualize those anomalies.</p>
+<div class="cell" data-hash="vignette-final-writeup_cache/html/unnamed-chunk-5_df560255097080c4f950d4f4a504950f">
+<div class="cell-output-display">
+<p><img src="vignette-final-writeup_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>What is the time period when anomalies are detected? We can observe how those anomalies lie in seasonal, trend, and remainder component.</p>
+<div class="cell" data-hash="vignette-final-writeup_cache/html/unnamed-chunk-6_a9d20efc64cc8deca468c419d2ccb374">
+<div class="cell-output-display">
+<p><img src="vignette-final-writeup_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Then, we can adjust the default trend and seasonality to see what the difference. Let’s check what is the default frequency trend for our seasonal decomposition method. This implies that if the scale is 1 day (meaning the difference between each data point is 1 day), then the frequency will be 7 days (or 1 week) and the trend will be around 90 days (or 3 months).</p>
+<div class="cell" data-hash="vignette-final-writeup_cache/html/unnamed-chunk-7_828423450c3e2a9b88b23af564015c18">
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 8 × 3
+  time_scale frequency trend   
+  &lt;chr&gt;      &lt;chr&gt;     &lt;chr&gt;   
+1 second     1 hour    12 hours
+2 minute     1 day     14 days 
+3 hour       1 day     1 month 
+4 day        1 week    3 months
+5 week       1 quarter 1 year  
+6 month      1 year    5 years 
+7 quarter    1 year    10 years
+8 year       5 years   30 years</code></pre>
+</div>
+</div>
+<p>We can adjust local parameters to see what will happen. You will find the Covid-19 period is so odd upon the whole time period. You can try to exclude years after 2019 to see the difference.</p>
+<div class="cell" data-hash="vignette-final-writeup_cache/html/unnamed-chunk-8_8fd11806ccf1e40aae0266edc165dfb8">
+<div class="cell-output-display">
+<p><img src="vignette-final-writeup_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Can we detect other economic recession? The answer is Yes. The <u>alpha</u> and <u>max_anoms</u> are the two parameters that control the <em>anomalize()</em> function. If we decrease alpha, it increases the bands making it more difficult to be an outlier. The max_anoms parameter is used to control the maximum percentage of data that can be an anomaly. Please alter two parameters to see what will output.</p>
+<div class="cell" data-hash="vignette-final-writeup_cache/html/unnamed-chunk-9_581f24dd701358426862941535c4da0f">
+<div class="cell-output-display">
+<p><img src="vignette-final-writeup_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="vignette-final-writeup_files/figure-html/unnamed-chunk-9-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell" data-hash="vignette-final-writeup_cache/html/unnamed-chunk-10_bff4e8b5bbfd13ee9582e05d55aa7598">
+<div class="cell-output-display">
+<p><img src="vignette-final-writeup_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="vignette-final-writeup_files/figure-html/unnamed-chunk-10-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Finally, we can extract the anomalous data points.</p>
+<div class="cell" data-hash="vignette-final-writeup_cache/html/unnamed-chunk-11_6e9047329e6ac5ca5642c45b149582f1">
+<div class="cell-output cell-output-stdout">
+<pre><code># A time tibble: 17 × 10
+# Index:         DATE
+   DATE       observed  season trend remainder remaind…¹ remai…² anomaly recom…³
+   &lt;date&gt;        &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt; &lt;chr&gt;     &lt;dbl&gt;
+ 1 2020-04-01     17.5 -0.378   4.98     12.9      -2.31    2.47 Yes        2.28
+ 2 2020-05-01     19.2 -0.328   5.03     14.5      -2.31    2.47 Yes        2.38
+ 3 2020-06-01     17.8  0.0992  5.08     12.6      -2.31    2.47 Yes        2.86
+ 4 2020-07-01     18.4  0.612   5.12     12.7      -2.31    2.47 Yes        3.42
+ 5 2020-08-01     16.6  0.366   5.17     11.1      -2.31    2.47 Yes        3.22
+ 6 2020-09-01     11.9  0.0819  5.22      6.60     -2.31    2.47 Yes        2.98
+ 7 2020-10-01     10.8 -0.0616  5.26      5.60     -2.31    2.47 Yes        2.88
+ 8 2020-11-01     10.7 -0.192   5.31      5.59     -2.31    2.47 Yes        2.80
+ 9 2020-12-01     11   -0.351   5.35      6.00     -2.31    2.47 Yes        2.68
+10 2021-01-01     11.2  0.243   5.39      5.56     -2.31    2.47 Yes        3.32
+11 2021-02-01     10.7  0.0108  5.44      5.25     -2.31    2.47 Yes        3.13
+12 2021-03-01     10.4 -0.102   5.48      5.02     -2.31    2.47 Yes        3.07
+13 2021-04-01     10.3 -0.378   5.53      5.15     -2.31    2.47 Yes        2.84
+14 2021-05-01      9.5 -0.328   5.57      4.25     -2.31    2.47 Yes        2.93
+15 2021-06-01     10    0.0992  5.62      4.28     -2.31    2.47 Yes        3.40
+16 2021-07-01      9.6  0.612   5.66      3.32     -2.31    2.47 Yes        3.96
+17 2021-08-01      8.9  0.366   5.71      2.82     -2.31    2.47 Yes        3.76
+# … with 1 more variable: recomposed_l2 &lt;dbl&gt;, and abbreviated variable names
+#   ¹​remainder_l1, ²​remainder_l2, ³​recomposed_l1</code></pre>
+</div>
+</div>
+</section>
+<section id="methods-and-techniques-used-in-anomalize" class="level3">
+<h3 class="anchored" data-anchor-id="methods-and-techniques-used-in-anomalize">Methods and Techniques used in “anomalize”</h3>
+<p>Anomaly detection is performed on remainders from a time series analysis that have had removed both:</p>
+<ul>
+<li><p>Seasonal Components: cyclic pattern usually occurring on a daily cycle for minute or hour data. Here, the cyclic pattern can be interpreted as yearly cycles for monthly data</p></li>
+<li><p>Trend Components: Longer term growth that happens over many observations</p></li>
+</ul>
+<p>Therefore, the main goal of step 1 is to generate remainders from a time series. The seasonal decomposition outperforms ARIMA and other machine learning models</p>
+<p>We can observe two techniques for seasonal decomposition in the “anomalize” package.</p>
+</section>
+<section id="stl-seasonal-decomposition-of-time-series-by-loess" class="level3">
+<h3 class="anchored" data-anchor-id="stl-seasonal-decomposition-of-time-series-by-loess">STL: Seasonal Decomposition of Time Series by Loess</h3>
+</section>
+<section id="twitter" class="level3">
+<h3 class="anchored" data-anchor-id="twitter">Twitter:</h3>
+<div class="cell" data-hash="vignette-final-writeup_cache/html/unnamed-chunk-12_189558e8a3cb482baeebebf73585f69d">
+<div class="cell-output-display">
+<p><img src="vignette-final-writeup_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="vignette-final-writeup_files/figure-html/unnamed-chunk-12-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="comparison-of-iqr-and-gesd-methods" class="level3">
+<h3 class="anchored" data-anchor-id="comparison-of-iqr-and-gesd-methods">Comparison of IQR and GESD Methods</h3>
+<div class="cell" data-hash="vignette-final-writeup_cache/html/unnamed-chunk-13_e4053ae5bba629b1f9b9e0e561c9083d">
+<div class="cell-output-display">
+<p><img src="vignette-final-writeup_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell" data-hash="vignette-final-writeup_cache/html/unnamed-chunk-14_6e284aa3406f89067c2604067a8a0b17">
+<div class="cell-output-display">
+<p><img src="vignette-final-writeup_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="vignette-final-writeup_files/figure-html/unnamed-chunk-14-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+</section>
+<section id="change-point-detection" class="level1">
+<h1>Change-point Detection</h1>
+<section id="what-is-change-point-detection" class="level3">
+<h3 class="anchored" data-anchor-id="what-is-change-point-detection">What is Change-point Detection</h3>
+<p>Time series data is a widely important data type that we have been learning more as of late. This data is described as sequences of measurements over time describing the behavior of systems. Often, we’ll see time series data in medicine, aerospace, finance, etc. The behaviors of the systems can change due to an aspect of time, therefore time series must be account for time in a way linear systems do not. Change point detection is a methodology to analyze data which detects abrupt changes in data when a property of the time series changes. A common example in stocks might be when do we see an abrupt change in the average prices of a certain stock over the period of a time, i.e., for one month cryptocurrency might sit at 70 dollars but then suddenly the next month it drops down to 4 and so we’d say the change-point was the period that seperates the two months.</p>
+<p>Changes are spotted through three primary detectors:</p>
+<ul>
+<li><p>mean</p></li>
+<li><p>variance</p></li>
+<li><p>mean-variance</p></li>
+</ul>
+<p>Change-point will detect changes from one sequence to another sequence usually based on one of these 3 detectors to see if there’s a “change.”</p>
+</section>
+<section id="examples-on-time-series-la-data" class="level3">
+<h3 class="anchored" data-anchor-id="examples-on-time-series-la-data">Examples on Time Series LA Data</h3>
+<p>Let’s use data and examples to give some actual intuition about how change point works regarding time series data. I would like to note, similar to above, we will be performing this only on the univariate case, as moving to the multivariate cases increasing the difficulty by a bit. As once you consider a multivariate case, no longer can you only consider changes in time, but you must also account for covariate correlation between variables along with changes in time.</p>
+<p>Plotting the data below you can already see some very obvious points where there are “changes” in unemployment.</p>
+<div class="cell" data-hash="vignette-final-writeup_cache/html/unnamed-chunk-15_dda82280902bdd5ca14d1749ace1efd1">
+<div class="cell-output-display">
+<p><img src="vignette-final-writeup_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Some very obvious changes offcur at ~2008 and ~2020, so we should expect a change point to occur here.</p>
+</section>
+<section id="packages" class="level3">
+<h3 class="anchored" data-anchor-id="packages">Packages</h3>
+<p>Some notable packages used for change-point is: -Rbeast -changepoint</p>
+<p>These two packages are what we’ll be using for the data.</p>
+<p>Primarily, changepoint will be the more useful package since it allows more flexibility in how the parameters are set. But Rbeast is a nice package to use for seeing quick preliminaries on the data.</p>
+</section>
+<section id="using-rbeast" class="level3">
+<h3 class="anchored" data-anchor-id="using-rbeast">Using RBeast</h3>
+<div class="cell" data-hash="vignette-final-writeup_cache/html/unnamed-chunk-16_dd4a3566d82b34b98561dcfbd23f850b">
+<div class="cell-output cell-output-stdout">
+<pre><code>[1;31m#####################################################################
+#                      Seasonal  Changepoints                       #
+#####################################################################
+[0m No seasonal/periodic component present (i.e., season='none')
+
+
+[1;31m#####################################################################
+#                      Trend  Changepoints                          #
+#####################################################################
+[0m.-------------------------------------------------------------------.
+| Ascii plot of probability distribution for number of chgpts (ncp) |
+.-------------------------------------------------------------------.
+|Pr(ncp = 0 )=0.000|*                                               |
+|Pr(ncp = 1 )=0.000|*                                               |
+|Pr(ncp = 2 )=0.000|*                                               |
+|Pr(ncp = 3 )=0.000|*                                               |
+|Pr(ncp = 4 )=0.000|*                                               |
+|Pr(ncp = 5 )=0.000|*                                               |
+|Pr(ncp = 6 )=0.000|*                                               |
+|Pr(ncp = 7 )=0.000|*                                               |
+|Pr(ncp = 8 )=0.000|*                                               |
+|Pr(ncp = 9 )=0.011|*                                               |
+|Pr(ncp = 10)=0.989|*********************************************** |
+.-------------------------------------------------------------------.
+|    Summary for number of Trend ChangePoints (tcp)                 |
+.-------------------------------------------------------------------.
+|ncp_max    = 10   | MaxTrendKnotNum: A parameter you set           |
+|ncp_mode   = 10   | Pr(ncp=10)=0.99: There is a 98.9% probability  |
+|                  | that the trend component has 10 changepoint(s).|
+|ncp_mean   = 9.99 | Sum{ncp*Pr(ncp)} for ncp = 0,...,10            |
+|ncp_pct10  = 10.00 | 10% percentile for number of changepoints      |
+|ncp_median = 10.00 | 50% percentile: Median number of changepoints  |
+|ncp_pct90  = 10.00 | 90% percentile for number of changepoints      |
+.-------------------------------------------------------------------.
+| List of probable trend changepoints ranked by probability of      |
+| occurrence: Please combine the ncp reported above to determine    |
+| which changepoints below are  practically meaningful              |
+'-------------------------------------------------------------------'
+|tcp#              |time (cp)                  |prob(cpPr)          |
+|------------------|---------------------------|--------------------|
+|1                 |363.000000                 |1.00000             |
+|2                 |368.000000                 |0.99717             |
+|3                 |138.000000                 |0.99558             |
+|4                 |234.000000                 |0.74542             |
+|5                 |29.000000                  |0.63071             |
+|6                 |214.000000                 |0.61671             |
+|7                 |380.000000                 |0.49896             |
+|8                 |261.000000                 |0.44442             |
+|9                 |179.000000                 |0.40704             |
+|10                |323.000000                 |0.27342             |
+.-------------------------------------------------------------------.
+
+
+
+NOTE: the beast output object 'o' is a LIST. Type 'str(o)' to see all 
+the elements in it. Or use 'plot(o)' or 'plot(o,interactive=TRUE)' to 
+plot the model output.</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="vignette-final-writeup_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>To read this graph, the dotted lines mean that there are indications of a change-point. In this graph, it detects around 10, and we can tell that there are change points where our initially intuition had expected it to be. What’s neat about the package is that it tells us the probability that it expects a changepoint there, so at the x-axis of time of 363 and 138, about 2020 and 2008 respectively, it detects around a 99% chance that there is a valid change point there account for mean and variance together.</p>
+</section>
+<section id="using-changepoint" class="level3">
+<h3 class="anchored" data-anchor-id="using-changepoint">Using changepoint</h3>
+<p>How do we know if a change-point found is significant or not? We calculate cost of the whole data with no change, if the difference is large enough then we say there is no change, otherwise if we see a appropriate difference in two intervals in mean, variance, or both, then we say there’s a change. In changepoint package, the default change-point metric to test if there is a change point or not is MBIC - a Modified Bayesian Information Criterion. There are various other’s but MBIC is a linear penalty to find if there is a singular, at most one changepoint, in terms of time series data this isn’t usually the case but let’s try it out.</p>
+<div class="cell" data-hash="vignette-final-writeup_cache/html/unnamed-chunk-17_ce1171937818588fe491f756a8ffb2d4">
+<div class="cell-output-display">
+<p><img src="vignette-final-writeup_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Notice that we definitely need more than one point to express change points. But before we proceed, when using changepoint mean, we assume that the data values follow a normal distribution with all steps from points to points having the same standard deviation, usually 1. Therefore, let’s scale appropriately and see if our data may break assumptions.</p>
+<div class="cell" data-hash="vignette-final-writeup_cache/html/unnamed-chunk-18_ed1bb8026ef4ec6b5f4dd41fe0602622">
+<div class="cell-output-display">
+<p><img src="vignette-final-writeup_files/figure-html/unnamed-chunk-18-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>The change-point doesn’t change so therefore it’s fairly safe to assume that our data is fairly normalized and since we still get the same changepoint after scaling the variance, that shows that this is actually a changepoint.</p>
+<div class="cell" data-hash="vignette-final-writeup_cache/html/unnamed-chunk-19_74813039f88ed0b2840c9b6ef152912e">
+<div class="cell-output-display">
+<p><img src="vignette-final-writeup_files/figure-html/unnamed-chunk-19-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>There are two primary methods that we cover:</p>
+<ul>
+<li><p>PELT (Pruned Exact Linear Time)</p></li>
+<li><p>BinSeg (Binary Segmentation)</p></li>
+</ul>
+<p>Typically, while asymptotically PELT is quicker in performance speed, Binary Segmentation has shown to be a bit faster in terms of application. Although, PELT typically leads to substantially more accurate segmentations than Binary Segmentation</p>
+<p>Above we see the use of PELT only with respect to variance, and we can already see some inaccuracies with an inability to track all the notable changes. This might be a sign that we should also check for mean.</p>
+<div class="cell" data-hash="vignette-final-writeup_cache/html/unnamed-chunk-20_4b7e72a75f91a015af9ef9efacae8775">
+<div class="cell-output-display">
+<p><img src="vignette-final-writeup_files/figure-html/unnamed-chunk-20-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Already, we can already see improvement using mean and that it’s starting to match our results from the Rbeast preliminary runs. Using mean and PELT gives 13 change point positions, but to not draw any conclusions, lets try using mean and variance and perhaps a different penalty method to see if we can get something “better.”</p>
+<div class="cell" data-hash="vignette-final-writeup_cache/html/unnamed-chunk-21_fdcbce1cf42a8deb5d638f7dfd63bf56">
+<div class="cell-output-display">
+<p><img src="vignette-final-writeup_files/figure-html/unnamed-chunk-21-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>From an initial view, we can already see that meanvar and PELT produces far too many change-points and that it doesn’t really produce anything of value. Therefore, let’s opt to use Binary Segmentation and mean, instead, which we might expect to get better points.</p>
+<div class="cell" data-hash="vignette-final-writeup_cache/html/unnamed-chunk-22_793777a67ba16c45b5d89611a6b1aad5">
+<div class="cell-output-display">
+<p><img src="vignette-final-writeup_files/figure-html/unnamed-chunk-22-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Although we see far less change-points, we can already see the most valuable point’s that would be telling of significant unemployment rates changes. Such as the recession in 2008 and COVID in 2020.</p>
+<p>Although the testing is ambiguous and it’s difficult to see what really is “good” change point detection, this is how we went about our methods and intuition.</p>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    setTimeout(function() {
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+    tippyHover(ref, function() {
+      var popup = window.document.createElement('div');
+      cites.forEach(function(cite) {
+        var citeDiv = window.document.createElement('div');
+        citeDiv.classList.add('hanging-indent');
+        citeDiv.classList.add('csl-entry');
+        var biblioDiv = window.document.getElementById('ref-' + cite);
+        if (biblioDiv) {
+          citeDiv.innerHTML = biblioDiv.innerHTML;
+        }
+        popup.appendChild(citeDiv);
+      });
+      return popup.innerHTML;
+    });
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
