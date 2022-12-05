@@ -1,6 +1,6 @@
 ---
 title: "Vignette Writeup"
-author: "Edward Ho, "
+author: "Name"
 date: last-modified
 published-title: "Updated"
 editor: visual
@@ -19,68 +19,365 @@ library(tidyverse)
 library(ggplot2)
 library(gridExtra)
 library(knitr)
+library(tibbletime)
+library(anomalize)
+library(timetk)
+library(zoo) #dates
+library(Rbeast) #used for change-point detection
+library(changepoint) #used for change-point detection
+library(changepoint.np) #used for change-point nonparemetric
 ```
 
 # Executive summary
 
 Time series anomaly detection and change-point on the univariate (potentially multivariate case) for time series economic data from LA concerning unemployment.
 
-## Task Question 1:
-
-[TEXT HERE]
-
-## Task Question 2:
-
-The primary interest in task 2 was to find significant periods of changes, whereas task 1 focused on anomaly detection of certain points, our interest lies in finding significant increments of time where there may have been upwards or downwards shifts in unemployment rates.
-
 # Data description
 
 ```{r}
-unemployment <- read_csv('data/processed_data.csv')
+unemployment <- read_csv(here::here('data/processed_data.csv'))
 unemployment
 ```
 
-Above we can see that the data collected is essentially a wrap-up on the 1st of a given month from the years 1900 to 2021 recorded from the city of Los Angeles. These variables encapsulate various city markers that range from unemployment to government benefits. 
-Notably, belows are some interesting variables of interest:
+Above we can see that the data collected is essentially a wrap-up on the 1st of a given month from the years 1900 to 2021 recorded from the city of Los Angeles. These variables encapsulate various city markers that range from unemployment to government benefits. Notably, belows are some interesting variables of interest:
 
-- The date (Year-Month-Day) of each observation/recording
+-   The date (Year-Month-Day) of each observation/recording
 
-- The unemployment rate
+-   The unemployment rate
 
-- Average price of electricity
+-   Average price of electricity
 
-- Average price of gasoline 
+-   Average price of gasoline
 
 Since we are only concerned with the time-series aspect of unemployment, we are only focusing on the date and the unemployment rate of each month, therefore we will not show much interest in the other variables, yet.
 
-# Findings
+# Anomaly Detection
 
-[Finding's and Methodology for Task 1 and 2 below]
+In this vignette, you'll learn how to conduct anomaly detection for a single time-series data.
 
-## Task 1
+### What is Anomaly Detection?
 
-[things of interest]
+A time series is the sequential set of values tracked over a time duration. An anomaly is something that happens that was unexpected or was caused by an abnormal event. (more contents to go....)
 
-### Methodology for Task 1
+### Set up
 
-[how it's found]
+We are going to work with "anomalize" and "timetk" packages in R.
 
-### Results
+```{r}
+# import dataset 
+processed_data <- read.csv(here::here("data/processed_data.csv"))
 
-[finding's]
+# view dataset
+head(processed_data, 5)
 
-## Task 2
+# data processing 
+str(processed_data)
 
-[things of interest]
+# change chr to Date format for 'DATE' column
+# and select only the unemployment rate in LA
+df <- processed_data %>%
+  mutate(DATE, DATE = as.Date.character(DATE)) %>%
+  select(DATE, unemploy_rate_la) %>% 
+  as_tibble(df) # convert df to a tibble
 
-### Methodology for Task 2
+str(df)
+```
 
-[how it's found]
+### Uni-variate Time Series Anomaly Detection
 
-### Results
+The entire process of Anomaly detection for a time-series take place across 3 steps:
 
-[finding's]
+1.  Decompose the time-series into the underlying variables: *trend, seasonality, remainder*
+2.  Create upper and lower thresholds based on certain algorithms
+3.  Identify the data points which are outside the thresholds as anomalies
+
+```{r}
+# using 'anomalize' package
+#The R ‘anomalize’ package enables a workflow for detecting anomalies in data. The # main functions are time_decompose(), anomalize(), and time_recompose().
+
+df_anomalized <- df %>%
+  time_decompose(unemploy_rate_la, merge = TRUE) %>%
+  anomalize(remainder) %>%
+  time_recompose()
+
+df_anomalized %>% glimpse() 
+```
+
+In the output tibble, there is a character column labeling if a time value is an anomalies or not. we can guess that anomalies are determined by "remainder" and the interval formed by "remainder_l1" and "remainder_l2". Then, we can visualize those anomalies.
+
+```{r}
+df_anomalized %>% plot_anomalies(ncol = 4, alpha_dots = 0.75)
+```
+
+What is the time period when anomalies are detected? We can observe how those anomalies lie in seasonal, trend, and remainder component.
+
+```{r}
+p1 <- df_anomalized %>%
+  plot_anomaly_decomposition() +
+  ggtitle("Freq/Trend = 'auto'")
+
+p1
+```
+
+Then, we can adjust the default trend and seasonality to see what the difference. Let's check what is the default frequency trend for our seasonal decomposition method. This implies that if the scale is 1 day (meaning the difference between each data point is 1 day), then the frequency will be 7 days (or 1 week) and the trend will be around 90 days (or 3 months).
+
+```{r}
+get_time_scale_template()
+```
+
+We can adjust local parameters to see what will happen. You will find the Covid-19 period is so odd upon the whole time period. You can try to exclude years after 2019 to see the difference.
+
+```{r}
+p2 <- df %>%
+  time_decompose(unemploy_rate_la,
+                 frequency = "auto",
+                 trend     = "6 months") %>%
+  anomalize(remainder) %>%
+  plot_anomaly_decomposition() +
+  ggtitle("Trend = 6 months (Local)")
+
+p2
+```
+
+Can we detect other economic recession? The answer is Yes. The [alpha]{.underline} and [max_anoms]{.underline} are the two parameters that control the *anomalize()* function. If we decrease alpha, it increases the bands making it more difficult to be an outlier. The max_anoms parameter is used to control the maximum percentage of data that can be an anomaly. Please alter two parameters to see what will output.
+
+```{r}
+# Adjusting Alpha and Max Anoms
+
+p4 <- df %>%
+  time_decompose(unemploy_rate_la) %>%
+  anomalize(remainder, alpha = 0.025, max_anoms = 0.2) %>%
+  time_recompose() %>%
+  plot_anomalies(time_recomposed = TRUE) +
+  ggtitle("alpha = 0.05")
+#> frequency = 7 days
+#> trend = 91 days
+p5 <- df %>%
+  time_decompose(unemploy_rate_la) %>%
+  anomalize(remainder, alpha = 0.6, max_anoms = 0.2) %>%
+  time_recompose() %>%
+  plot_anomalies(time_recomposed = TRUE) +
+  ggtitle("alpha = 0.05")
+#> frequency = 7 days
+#> trend = 91 days
+p4
+p5
+
+
+```
+
+```{r}
+p6 <- df %>%
+  time_decompose(unemploy_rate_la) %>%
+  anomalize(remainder, alpha = 0.3, max_anoms = 0.2) %>%
+  time_recompose() %>%
+  plot_anomalies(time_recomposed = TRUE) +
+  ggtitle("20% Anomalies")
+#> frequency = 7 days
+#> trend = 91 days
+
+p7 <- df %>%
+  time_decompose(unemploy_rate_la) %>%
+  anomalize(remainder, alpha = 0.3, max_anoms = 0.05) %>%
+  time_recompose() %>%
+  plot_anomalies(time_recomposed = TRUE) +
+  ggtitle("5% Anomalies")
+#> frequency = 7 days
+#> trend = 91 days
+p6
+p7
+```
+
+Finally, we can extract the anomalous data points.
+
+```{r}
+df %>% 
+  time_decompose(unemploy_rate_la) %>%
+  anomalize(remainder) %>%
+  time_recompose() %>%
+  filter(anomaly == 'Yes')
+```
+
+### Methods and Techniques used in "anomalize"
+
+Anomaly detection is performed on remainders from a time series analysis that have had removed both:
+
+-   Seasonal Components: cyclic pattern usually occurring on a daily cycle for minute or hour data. Here, the cyclic pattern can be interpreted as yearly cycles for monthly data
+
+-   Trend Components: Longer term growth that happens over many observations
+
+Therefore, the main goal of step 1 is to generate remainders from a time series. The seasonal decomposition outperforms ARIMA and other machine learning models
+
+We can observe two techniques for seasonal decomposition in the "anomalize" package.
+
+### STL: Seasonal Decomposition of Time Series by Loess
+
+### Twitter:
+
+```{r}
+# STL Decomposition Method
+p1 <- df %>%
+    time_decompose(unemploy_rate_la, 
+                   method    = "stl") %>%
+    anomalize(remainder) %>%
+    plot_anomaly_decomposition() +
+    ggtitle("STL Decomposition")
+#> frequency = 7 days
+#> trend = 91 days
+#> Registered S3 method overwritten by 'quantmod':
+#>   method            from
+#>   as.zoo.data.frame zoo
+
+# Twitter Decomposition Method
+p2 <- df %>%
+    time_decompose(unemploy_rate_la, 
+                   method    = "twitter") %>%
+    anomalize(remainder) %>%
+    plot_anomaly_decomposition() +
+    ggtitle("Twitter Decomposition")
+#> frequency = 7 days
+#> median_span = 85 days
+
+# Show plots
+p1
+p2
+```
+
+### Comparison of IQR and GESD Methods
+
+```{r}
+# Generate anomalies
+set.seed(100)
+x <- rnorm(100)
+idx_outliers    <- sample(100, size = 5)
+x[idx_outliers] <- x[idx_outliers] + 10
+
+# Visualize simulated anomalies
+qplot(1:length(x), x, 
+      main = "Simulated Anomalies",
+      xlab = "Index") 
+```
+
+```{r}
+# Analyze outliers: Outlier Report is available with verbose = TRUE
+iqr_outliers <- iqr(x, alpha = 0.05, max_anoms = 0.2, verbose = TRUE)$outlier_report
+
+gesd_outliers <- gesd(x, alpha = 0.05, max_anoms = 0.2, verbose = TRUE)$outlier_report
+
+# ploting function for anomaly plots
+ggsetup <- function(data) {
+    data %>%
+        ggplot(aes(rank, value, color = outlier)) +
+        geom_point() +
+        geom_line(aes(y = limit_upper), color = "red", linetype = 2) +
+        geom_line(aes(y = limit_lower), color = "red", linetype = 2) +
+        geom_text(aes(label = index), vjust = -1.25) +
+        theme_bw() +
+        scale_color_manual(values = c("No" = "#2c3e50", "Yes" = "#e31a1c")) +
+        expand_limits(y = 13) +
+        theme(legend.position = "bottom")
+}
+    
+
+# Visualize
+p3 <- iqr_outliers %>% 
+    ggsetup() +
+    ggtitle("IQR: Top outliers sorted by rank") 
+
+p4 <- gesd_outliers %>% 
+    ggsetup() +
+    ggtitle("GESD: Top outliers sorted by rank") 
+    
+# Show plots
+p3
+p4
+```
+
+# Change-point Detection
+
+### What is Change-point Detection
+
+
+
+### Examples on Time Series LA Data
+
+```{r}
+processed_data$DATE <- as.Date(processed_data$DATE, "%Y/%m/%d") # change date from characters to date element
+data <- tibble(processed_data$DATE,processed_data$unemploy_rate_la) %>%
+  rename("unemploy_rate_la" = "processed_data$unemploy_rate_la", "date" = "processed_data$DATE")
+value.ts = ts(data$unemploy_rate_la,start = c(1990,1),end = c(2022,1), frequency = 12) 
+plot(value.ts)
+```
+
+```{r}
+## Using Rbeast
+y <- data$unemploy_rate_la
+out=beast(y, season='none')
+plot(out)
+print(out)
+
+# cpt.mean - mean only changes
+# cpt.var - variance only changes
+# cpt.meanvar - mean and variance changes
+```
+
+```{r}
+# How do we know if a change-point found is significant or not?
+# We calculate cost of the whole data with no change
+# If the difference is large enough then we say there is no change
+# default change-point metric in changepoint package to test if there is a change point or 
+# not is MBIC - a Modified Bayesian Information Criterion 
+
+## Using changepoint 
+m1.amoc = cpt.mean(value.ts, penalty = "MBIC")
+#cpts(m1.amoc) # checks for at most one change-point value
+plot(m1.amoc)
+
+# we can see that we definitely need way more change points that just one
+#LA.default = cpt.mean(value.ts)
+#cpts(LA.default)
+#param.est(LA.default)
+
+# it can be seen that the variance might not be equal to 1, so we must appropriately scale it  
+#LA.scale = cpt.mean(as.vector(scale(data$unemploy_rate_la)))
+#cpts(LA.scale)
+```
+
+```{r}
+# since we still get the same changepoint after scaling the variance, that shows that this is actually a changepoint
+# and not just because we forced it to show a change point
+m2.man = cpt.var(value.ts,method = "PELT")
+cpts(m2.man) 
+param.est(m2.man)
+plot(m2.man)
+```
+
+```{r}
+## using mean
+m3.man = cpt.mean(value.ts,method = "PELT")
+cpts(m3.man) 
+param.est(m3.man)
+plot(m3.man)
+```
+
+```{r}
+## finding changepoint with respect to variance and mean
+mv1.pelt <- cpt.meanvar(value.ts, method = "PELT")
+length(cpts(mv1.pelt))
+plot(mv1.pelt)
+# notice that PELT produces way too many points so overall it's not that useful to our analysis, therefore
+# we should change our method, thus I opted for BinSeg. And we already can see that it produces much more useful 
+# data than PELT does since it shows meaning points of interest.
+```
+
+```{r}
+mv2.pelt <- cpt.meanvar(value.ts, method = "BinSeg")
+length(cpts(mv2.pelt))
+param.est(mv2.pelt)
+plot(mv2.pelt)
+```
+
 
 # Conclusion
 
-[wrapping up project, final remark's about project/data/results]
+\[wrapping up project, final remark's about project/data/results\]
